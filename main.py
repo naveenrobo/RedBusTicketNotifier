@@ -1,6 +1,8 @@
 import requests
 import re
 import datetime
+import urllib
+import csv
 
 from city import City
 
@@ -32,7 +34,23 @@ def getRequest(url):
         except Exception as e:
             print(e)
     else:
-        print("error while loading page.Response code is "+r.status_code)
+        print("error while loading page.Response code is %s" % r.status_code)
+        return None
+
+
+def postRequest(url, payload, headers, querystring):
+    r = requests.request("POST", url, data=payload,
+                         headers=headers, params=querystring)
+    if(r.status_code == 200):
+        try:
+            content = r.json()
+            return content
+        except Exception as e:
+            print(e)
+    else:
+        print("error while loading page.Response code is %s" % r.status_code)
+        print(r.text)
+        print(r.url)
         return None
 
 
@@ -65,7 +83,7 @@ def getTravelDate():
     monthString = ""
     try:
         day = int(day)
-        month = months[int(month)]
+        monthString = months[int(month)]
         year = int(year)
     except Exception:
         raise Exception("Invalid date")
@@ -80,15 +98,34 @@ def currentDate():
     return "{day}-{month}-{year}".format(day=now.day, month=months[int(now.month)], year=now.year)
 
 
-if __name__ == "__main__":
+def findBus(fromLocation, toLocation, date, busName):
+    src, dest = getCityId(fromLocation, toLocation)
+    if(src is not None and dest is not None):
+        print(src.name)
+        print(dest.name)
+        busSearch = 'https://www.redbus.in/search/SearchResults'
+        queryString = {'fromCity': src.id, 'toCity': dest.id, 'src': src.name,
+                       'dst': dest.name,  'DOJ': date, 'meta': 'true', 'returnSearch': '0'}
+        payload = "{\"headers\":{\"Content-Type\":\"application/json\"}}"
+        headers = {
+            'Content-Type': "application/json"
+        }
+        buses = postRequest(busSearch, payload, headers, queryString)
+        busList = []
+        if(buses is not None):
+            print("Searching through the list")
+            list = buses['inv']
+            for bus in list:
+                if(busName is not None and busName.lower() in bus['Tvs'].lower()):
+                    busList.append(bus)
+        
+        return busList
 
-    print("Running file directly")
 
+def gatherData():
     fromLocation = input('Enter source location : ')
     toLocation = input('Enter destination location : ')
-
     date = currentDate()
-
     while True:
         try:
             date = getTravelDate()
@@ -96,10 +133,18 @@ if __name__ == "__main__":
         except Exception:
             print("\nInvalid date\n")
             continue
-
     print("\nTravel date is %s" % date)
+    busName = input('Enter Bus name : ') or None
+    return fromLocation, toLocation, date, busName
 
-    src, dest = getCityId(fromLocation, toLocation)
-    if(src is not None and dest is not None):
-        print(src.name)
-        print(dest.name)
+
+if __name__ == "__main__":
+    print("Running file directly")
+    with open('data.csv', 'r') as file:
+        reader = csv.DictReader(file)
+        for line in reader:
+            print(line['from'])
+            print(line['to'])
+            print(findBus(line['from'],line['to'],line['date'],line['busname']))
+
+    #findBus(fromLocation, toLocation, date, busName)
