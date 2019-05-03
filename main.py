@@ -98,7 +98,7 @@ def currentDate():
     return "{day}-{month}-{year}".format(day=now.day, month=months[int(now.month)], year=now.year)
 
 
-def findBus(fromLocation, toLocation, date, busName):
+def findBus(fromLocation, toLocation, date, busName, ac, sleeper):
     src, dest = getCityId(fromLocation, toLocation)
     if(src is not None and dest is not None):
         print(src.name)
@@ -117,7 +117,9 @@ def findBus(fromLocation, toLocation, date, busName):
             list = buses['inv']
             for bus in list:
                 if(busName is not None and busName.lower() in bus['Tvs'].lower()):
-                    busList.append(bus)
+                    print(bus['bc']['IsAc'] and bus['bc']['IsSleeper'])
+                    if(bus['bc']['IsAc'] is bool(ac) and bus['bc']['IsSleeper'] is bool(sleeper)):
+                        busList.append(bus)
         
         return busList
 
@@ -143,8 +145,6 @@ if __name__ == "__main__":
     with open('data.csv', 'r') as file:
         reader = csv.DictReader(file)
         for line in reader:
-            print(line['from'])
-            print(line['to'])
-            print(findBus(line['from'],line['to'],line['date'],line['busname']))
+            print(findBus(line['from'],line['to'],line['date'],line['busname'],line['ac'],line['sleeper']))
 
     #findBus(fromLocation, toLocation, date, busName)
