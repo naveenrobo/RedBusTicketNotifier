@@ -1,4 +1,7 @@
 import requests
+import re
+import datetime
+
 from city import City
 
 # Get id for given location
@@ -13,6 +16,11 @@ from city import City
 
 # URL's
 search = 'https://www.redbus.in/Home/SolarSearch?search=%s'
+
+# other varialbes
+now = datetime.datetime.now()
+months = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
+          "July", "Aug", "Sept", "Oct", "Nov", "Dec"]
 
 
 def getRequest(url):
@@ -36,7 +44,8 @@ def getCityDetails(url):
             if(city != None):
                 src = City(city[0]['ID'], city[0]['Name'])
                 return src
-            return City(0,"Location not found")
+            print("Location not found")
+            return City(0, "Location not found")
     except Exception as e:
         print(e)
 
@@ -49,10 +58,48 @@ def getCityId(fromLocation, toLocation):
     return src, dest
 
 
+def getTravelDate():
+    day = input("Enter day ({}): ".format(now.strftime("%d"))) or now.day
+    month = input("Enter month ({}):".format(now.strftime("%m"))) or now.month
+    year = input("Enter year ({}): ".format(now.strftime("%Y"))) or now.year
+    monthString = ""
+    try:
+        day = int(day)
+        month = months[int(month)]
+        year = int(year)
+    except Exception:
+        raise Exception("Invalid date")
+
+    date = "{day}-{month}-{year}".format(day=day,
+                                         month=monthString, year=year)
+
+    return date
+
+
+def currentDate():
+    return "{day}-{month}-{year}".format(day=now.day, month=months[int(now.month)], year=now.year)
+
+
 if __name__ == "__main__":
+
     print("Running file directly")
+
     fromLocation = input('Enter source location : ')
     toLocation = input('Enter destination location : ')
+
+    date = currentDate()
+
+    while True:
+        try:
+            date = getTravelDate()
+            break
+        except Exception:
+            print("\nInvalid date\n")
+            continue
+
+    print("\nTravel date is %s" % date)
+
     src, dest = getCityId(fromLocation, toLocation)
-    print(src.name)
-    print(dest.name)
+    if(src is not None and dest is not None):
+        print(src.name)
+        print(dest.name)
